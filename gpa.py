@@ -1,5 +1,5 @@
 """
-This script is highly specific to Columbia's website, don't judge me haters
+This script is highly specific to Columbia's grade portal, don't judge me haters
 """
 
 from bs4 import BeautifulSoup
@@ -25,24 +25,32 @@ with open('test.html', 'r') as page:
 
 	courses = soup.find_all('tr', class_ = 'clsDataGridData')
 
+	# List of pending course names
 	pending_courses = []
+
+	# Pending points (credits) and grades
 	total_pending_points = 0
 	total_pending_grades = 0
 
+	# Completed points and grades
 	total_points = 0
 	total_grades = 0
 
+	# Calculate current GPA from completed courses
 	for course in courses:
 		if len(course.contents) == 10:
 			cols = course.contents
 			
+			# If course is worth credits (i.e. not a discussion section)
 			if cols[5].contents[0].strip() != '0.00':
 				course_name = cols[4].contents[0].strip()
 				points = float(cols[5].contents[0].strip())
+
+				# If grade not yet submitted, add to pending points count
 				if not cols[8].contents:
 					pending_courses.append((course_name, points))
 					total_pending_points += points
-
+				# Count points if course was not taken P/F (pass fail)
 				elif cols[8].contents[0].strip() != 'P':
 					grade = float(cols[6].contents[0].strip())
 					letter_grade = cols[8].contents[0].strip()
@@ -53,11 +61,15 @@ with open('test.html', 'r') as page:
 	print('Current GPA:')
 	print(round(total_grades/total_points, 2))
 
+	# Get user input for projected grades of pending courses
 	for course in pending_courses:
 		projected_letter_grade = input('Projected grade for {}: '.format(course[0]))
+
+		# Remove pending credits for P/D/F courses, since they don't affect GPA
 		if projected_letter_grade == 'P':
 			total_pending_points -= 1
 		else:
+			# Validate letter grade input
 			while projected_letter_grade not in letter_to_numeric:
 				projected_letter_grade = input('Please enter valid letter grade: ')
 			total_pending_grades += course[1]*letter_to_numeric[projected_letter_grade]
